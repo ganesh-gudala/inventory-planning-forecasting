@@ -1,0 +1,7 @@
+step,rows_before,rows_after,rows_removed,note
+Remove duplicates and double entries,1067371,1033032,34339,
+"Keep product lines only (no postage, fees, adjustments)",1033032,1027052,5980,
+Remove zero-price lines (stock write-offs),1027052,1021124,5928,
+"Remove two bulk-order mistakes (80,995 and 74,215 units)",1021124,1021120,4,
+Keep the 103 full weeks (drop 1-6 Dec 2009 and 28 Nov 2011 onwards),1021120,971001,50119,"removes the partial first week, the partial last week and the partial Dec-2011"
+Weekly grid for the 150 planning SKUs (zero weeks filled in),190609,15450,175159,107 negative net weeks floored at 0
