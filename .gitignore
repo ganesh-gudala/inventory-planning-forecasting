@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Raw data is downloaded locally (too big for GitHub):  python scripts/download_data.py
+data/raw/*
+!data/raw/README.md
+# The full clean invoice table is rebuilt by notebook 01 (about 90 MB).
+# The smaller planning tables in data/processed/ ARE in Git, so Excel and Power BI work straight after cloning.
+data/processed/order_lines.csv
+
+# Excel / Power BI local files
+~$*.xlsx
+**/.pbi/localSettings.json
+**/.pbi/cache.abf
+*.pbix.bak
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
