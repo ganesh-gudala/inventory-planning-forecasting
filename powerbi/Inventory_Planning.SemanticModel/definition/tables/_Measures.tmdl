@@ -1,0 +1,507 @@
+table _Measures
+	lineageTag: b582f3ce-9fd6-5634-b599-dc61df992f28
+
+	/// Target service level: pick it in the slicer (default 95%)
+	measure 'Service Level %' = SELECTEDVALUE ( 'Service Level'[Service Level], 0.95 )
+		formatString: 0.0%
+		displayFolder: 1 Assumptions
+		lineageTag: b892cb8b-b599-5af0-9b21-a66dcd38a746
+
+	/// Safety factor = NORM.S.INV(service level)
+	measure 'z' = NORM.S.INV ( [Service Level %] )
+		formatString: 0.000
+		displayFolder: 1 Assumptions
+		lineageTag: 89079cd7-8456-5158-ae28-00986c7e72c6
+
+	/// Lead time in weeks (slicer, default 3)
+	measure 'Lead Time (wks)' = SELECTEDVALUE ( 'Lead Time'[Lead Time (weeks)], 3 )
+		formatString: 0
+		displayFolder: 1 Assumptions
+		lineageTag: 448e8d51-29f5-51dd-89fc-47fb3db7d743
+
+	/// Assumption: holding cost per year as % of unit cost
+	measure 'Holding Cost Rate' = 0.25
+		formatString: 0%
+		displayFolder: 1 Assumptions
+		lineageTag: 4f282baf-2461-5d80-a215-085dde632789
+
+	/// Assumption: £ per purchase order line
+	measure 'Ordering Cost' = 50
+		formatString: £#,0
+		displayFolder: 1 Assumptions
+		lineageTag: be1b5686-4b46-51f3-9bc7-afc7b6a2e030
+
+	/// Assumption: unit cost = 60% of the average selling price
+	measure 'Unit Cost Ratio' = 0.6
+		formatString: 0%
+		displayFolder: 1 Assumptions
+		lineageTag: 06940c42-45a4-5242-80e6-e87d39323b55
+
+	/// Assumption: current stock = 8 weeks of average demand for every SKU
+	measure 'Current Cover Weeks' = 8
+		formatString: 0
+		displayFolder: 1 Assumptions
+		lineageTag: 4f6755da-2821-51d6-9cbb-e3ac0719cb0c
+
+	measure 'SKUs' = COUNTROWS ( Products )
+		formatString: 0
+		displayFolder: 2 Policy (units)
+		lineageTag: c02f2a80-5f6e-535c-ab18-2ee024121817
+
+	/// Forecast demand during the lead time (chosen method, future weeks)
+	measure 'Lead Time Demand' =
+			VAR _lt = [Lead Time (wks)]
+			VAR _z = [z]
+			VAR _cover = [Current Cover Weeks]
+			VAR _ratio = [Unit Cost Ratio]
+			VAR _hold = [Holding Cost Rate]
+			VAR _order = [Ordering Cost]
+			RETURN
+			    SUMX (
+			        Products,
+			        VAR _ltd = CALCULATE ( SUM ( Forecasts[forecast_units] ), Forecasts[run] = "Future", Forecasts[is_chosen] = TRUE (), Forecasts[horizon] <= _lt )
+			        VAR _ss = ROUNDUP ( _z * Products[sd_weekly_52w] * SQRT ( _lt ), 0 )
+			        VAR _rop = ROUNDUP ( _ltd, 0 ) + _ss
+			        VAR _cost = Products[avg_price] * _ratio
+			        VAR _eoq = ROUNDUP ( SQRT ( 2 * Products[avg_weekly_52w] * 52 * _order / ( _hold * _cost ) ), 0 )
+			        VAR _cur = ROUND ( _cover * Products[avg_weekly_52w], 0 )
+			        RETURN _ltd
+			    )
+		formatString: #,0
+		displayFolder: 2 Policy (units)
+		lineageTag: 62ea0417-665b-58a0-bd99-b6f7feafaa75
+
+	/// z x std dev of weekly demand x SQRT(lead time), rounded up
+	measure 'Safety Stock' =
+			VAR _lt = [Lead Time (wks)]
+			VAR _z = [z]
+			VAR _cover = [Current Cover Weeks]
+			VAR _ratio = [Unit Cost Ratio]
+			VAR _hold = [Holding Cost Rate]
+			VAR _order = [Ordering Cost]
+			RETURN
+			    SUMX (
+			        Products,
+			        VAR _ltd = CALCULATE ( SUM ( Forecasts[forecast_units] ), Forecasts[run] = "Future", Forecasts[is_chosen] = TRUE (), Forecasts[horizon] <= _lt )
+			        VAR _ss = ROUNDUP ( _z * Products[sd_weekly_52w] * SQRT ( _lt ), 0 )
+			        VAR _rop = ROUNDUP ( _ltd, 0 ) + _ss
+			        VAR _cost = Products[avg_price] * _ratio
+			        VAR _eoq = ROUNDUP ( SQRT ( 2 * Products[avg_weekly_52w] * 52 * _order / ( _hold * _cost ) ), 0 )
+			        VAR _cur = ROUND ( _cover * Products[avg_weekly_52w], 0 )
+			        RETURN _ss
+			    )
+		formatString: #,0
+		displayFolder: 2 Policy (units)
+		lineageTag: eaaccaa4-7a9f-58fa-b311-b321bbf79906
+
+	/// Lead-time demand + safety stock = the Min level
+	measure 'Reorder Point' =
+			VAR _lt = [Lead Time (wks)]
+			VAR _z = [z]
+			VAR _cover = [Current Cover Weeks]
+			VAR _ratio = [Unit Cost Ratio]
+			VAR _hold = [Holding Cost Rate]
+			VAR _order = [Ordering Cost]
+			RETURN
+			    SUMX (
+			        Products,
+			        VAR _ltd = CALCULATE ( SUM ( Forecasts[forecast_units] ), Forecasts[run] = "Future", Forecasts[is_chosen] = TRUE (), Forecasts[horizon] <= _lt )
+			        VAR _ss = ROUNDUP ( _z * Products[sd_weekly_52w] * SQRT ( _lt ), 0 )
+			        VAR _rop = ROUNDUP ( _ltd, 0 ) + _ss
+			        VAR _cost = Products[avg_price] * _ratio
+			        VAR _eoq = ROUNDUP ( SQRT ( 2 * Products[avg_weekly_52w] * 52 * _order / ( _hold * _cost ) ), 0 )
+			        VAR _cur = ROUND ( _cover * Products[avg_weekly_52w], 0 )
+			        RETURN _rop
+			    )
+		formatString: #,0
+		displayFolder: 2 Policy (units)
+		lineageTag: f9833a12-9fe8-55b8-8f88-971988867757
+
+	/// SQRT(2 x annual demand x ordering cost / (holding % x unit cost))
+	measure 'EOQ' =
+			VAR _lt = [Lead Time (wks)]
+			VAR _z = [z]
+			VAR _cover = [Current Cover Weeks]
+			VAR _ratio = [Unit Cost Ratio]
+			VAR _hold = [Holding Cost Rate]
+			VAR _order = [Ordering Cost]
+			RETURN
+			    SUMX (
+			        Products,
+			        VAR _ltd = CALCULATE ( SUM ( Forecasts[forecast_units] ), Forecasts[run] = "Future", Forecasts[is_chosen] = TRUE (), Forecasts[horizon] <= _lt )
+			        VAR _ss = ROUNDUP ( _z * Products[sd_weekly_52w] * SQRT ( _lt ), 0 )
+			        VAR _rop = ROUNDUP ( _ltd, 0 ) + _ss
+			        VAR _cost = Products[avg_price] * _ratio
+			        VAR _eoq = ROUNDUP ( SQRT ( 2 * Products[avg_weekly_52w] * 52 * _order / ( _hold * _cost ) ), 0 )
+			        VAR _cur = ROUND ( _cover * Products[avg_weekly_52w], 0 )
+			        RETURN _eoq
+			    )
+		formatString: #,0
+		displayFolder: 2 Policy (units)
+		lineageTag: b263784f-9d47-5b1f-9361-e64a0c8bcad3
+
+	/// Reorder point + EOQ
+	measure 'Max Level' =
+			VAR _lt = [Lead Time (wks)]
+			VAR _z = [z]
+			VAR _cover = [Current Cover Weeks]
+			VAR _ratio = [Unit Cost Ratio]
+			VAR _hold = [Holding Cost Rate]
+			VAR _order = [Ordering Cost]
+			RETURN
+			    SUMX (
+			        Products,
+			        VAR _ltd = CALCULATE ( SUM ( Forecasts[forecast_units] ), Forecasts[run] = "Future", Forecasts[is_chosen] = TRUE (), Forecasts[horizon] <= _lt )
+			        VAR _ss = ROUNDUP ( _z * Products[sd_weekly_52w] * SQRT ( _lt ), 0 )
+			        VAR _rop = ROUNDUP ( _ltd, 0 ) + _ss
+			        VAR _cost = Products[avg_price] * _ratio
+			        VAR _eoq = ROUNDUP ( SQRT ( 2 * Products[avg_weekly_52w] * 52 * _order / ( _hold * _cost ) ), 0 )
+			        VAR _cur = ROUND ( _cover * Products[avg_weekly_52w], 0 )
+			        RETURN _rop + _eoq
+			    )
+		formatString: #,0
+		displayFolder: 2 Policy (units)
+		lineageTag: 9b9bdc87-57a3-55af-81f6-22e7e7bf585a
+
+	/// Assumed current stock (weeks of cover x average weekly demand)
+	measure 'Current Stock' =
+			VAR _lt = [Lead Time (wks)]
+			VAR _z = [z]
+			VAR _cover = [Current Cover Weeks]
+			VAR _ratio = [Unit Cost Ratio]
+			VAR _hold = [Holding Cost Rate]
+			VAR _order = [Ordering Cost]
+			RETURN
+			    SUMX (
+			        Products,
+			        VAR _ltd = CALCULATE ( SUM ( Forecasts[forecast_units] ), Forecasts[run] = "Future", Forecasts[is_chosen] = TRUE (), Forecasts[horizon] <= _lt )
+			        VAR _ss = ROUNDUP ( _z * Products[sd_weekly_52w] * SQRT ( _lt ), 0 )
+			        VAR _rop = ROUNDUP ( _ltd, 0 ) + _ss
+			        VAR _cost = Products[avg_price] * _ratio
+			        VAR _eoq = ROUNDUP ( SQRT ( 2 * Products[avg_weekly_52w] * 52 * _order / ( _hold * _cost ) ), 0 )
+			        VAR _cur = ROUND ( _cover * Products[avg_weekly_52w], 0 )
+			        RETURN _cur
+			    )
+		formatString: #,0
+		displayFolder: 2 Policy (units)
+		lineageTag: c508666a-a19c-5301-8662-ed2d01538ba7
+
+	/// If stock is at or below the reorder point: order up to the max level
+	measure 'Suggested Order Qty' =
+			VAR _lt = [Lead Time (wks)]
+			VAR _z = [z]
+			VAR _cover = [Current Cover Weeks]
+			VAR _ratio = [Unit Cost Ratio]
+			VAR _hold = [Holding Cost Rate]
+			VAR _order = [Ordering Cost]
+			RETURN
+			    SUMX (
+			        Products,
+			        VAR _ltd = CALCULATE ( SUM ( Forecasts[forecast_units] ), Forecasts[run] = "Future", Forecasts[is_chosen] = TRUE (), Forecasts[horizon] <= _lt )
+			        VAR _ss = ROUNDUP ( _z * Products[sd_weekly_52w] * SQRT ( _lt ), 0 )
+			        VAR _rop = ROUNDUP ( _ltd, 0 ) + _ss
+			        VAR _cost = Products[avg_price] * _ratio
+			        VAR _eoq = ROUNDUP ( SQRT ( 2 * Products[avg_weekly_52w] * 52 * _order / ( _hold * _cost ) ), 0 )
+			        VAR _cur = ROUND ( _cover * Products[avg_weekly_52w], 0 )
+			        RETURN IF ( _cur <= _rop, _rop + _eoq - _cur, 0 )
+			    )
+		formatString: #,0
+		displayFolder: 2 Policy (units)
+		lineageTag: dc50cd23-a2fa-5035-9d8f-d011974e612d
+
+	/// SKUs whose current stock is at or below the reorder point
+	measure 'SKUs Reorder Now' =
+			VAR _lt = [Lead Time (wks)]
+			VAR _z = [z]
+			VAR _cover = [Current Cover Weeks]
+			VAR _ratio = [Unit Cost Ratio]
+			VAR _hold = [Holding Cost Rate]
+			VAR _order = [Ordering Cost]
+			RETURN
+			    SUMX (
+			        Products,
+			        VAR _ltd = CALCULATE ( SUM ( Forecasts[forecast_units] ), Forecasts[run] = "Future", Forecasts[is_chosen] = TRUE (), Forecasts[horizon] <= _lt )
+			        VAR _ss = ROUNDUP ( _z * Products[sd_weekly_52w] * SQRT ( _lt ), 0 )
+			        VAR _rop = ROUNDUP ( _ltd, 0 ) + _ss
+			        VAR _cost = Products[avg_price] * _ratio
+			        VAR _eoq = ROUNDUP ( SQRT ( 2 * Products[avg_weekly_52w] * 52 * _order / ( _hold * _cost ) ), 0 )
+			        VAR _cur = ROUND ( _cover * Products[avg_weekly_52w], 0 )
+			        RETURN IF ( _cur <= _rop, 1, 0 )
+			    )
+		formatString: 0
+		displayFolder: 2 Policy (units)
+		lineageTag: 4924df2f-00d0-5b48-8702-69aea3f5a40d
+
+	/// SKUs holding more than their max level
+	measure 'SKUs Overstock' =
+			VAR _lt = [Lead Time (wks)]
+			VAR _z = [z]
+			VAR _cover = [Current Cover Weeks]
+			VAR _ratio = [Unit Cost Ratio]
+			VAR _hold = [Holding Cost Rate]
+			VAR _order = [Ordering Cost]
+			RETURN
+			    SUMX (
+			        Products,
+			        VAR _ltd = CALCULATE ( SUM ( Forecasts[forecast_units] ), Forecasts[run] = "Future", Forecasts[is_chosen] = TRUE (), Forecasts[horizon] <= _lt )
+			        VAR _ss = ROUNDUP ( _z * Products[sd_weekly_52w] * SQRT ( _lt ), 0 )
+			        VAR _rop = ROUNDUP ( _ltd, 0 ) + _ss
+			        VAR _cost = Products[avg_price] * _ratio
+			        VAR _eoq = ROUNDUP ( SQRT ( 2 * Products[avg_weekly_52w] * 52 * _order / ( _hold * _cost ) ), 0 )
+			        VAR _cur = ROUND ( _cover * Products[avg_weekly_52w], 0 )
+			        RETURN IF ( _cur > _rop + _eoq, 1, 0 )
+			    )
+		formatString: 0
+		displayFolder: 2 Policy (units)
+		lineageTag: 6cb50b03-2f50-5b9e-a4f3-fdc83c44df39
+
+	/// Per SKU: Reorder now / Overstock / OK
+	measure 'Stock Status' =
+			IF ( HASONEVALUE ( Products[stock_code] ),
+			    IF ( [Current Stock] <= [Reorder Point], "Reorder now",
+			        IF ( [Current Stock] > [Max Level], "Overstock", "OK" ) ) )
+		displayFolder: 2 Policy (units)
+		lineageTag: e4cb0406-ef1d-5587-a255-ef49118c5d08
+
+	/// Chance that lead-time demand is bigger than current stock if nothing is ordered now (average over SKUs)
+	measure 'Stock-out Risk %' =
+			VAR _lt = [Lead Time (wks)]
+			VAR _z = [z]
+			VAR _cover = [Current Cover Weeks]
+			VAR _ratio = [Unit Cost Ratio]
+			VAR _hold = [Holding Cost Rate]
+			VAR _order = [Ordering Cost]
+			RETURN
+			    AVERAGEX (
+			        Products,
+			        VAR _ltd = CALCULATE ( SUM ( Forecasts[forecast_units] ), Forecasts[run] = "Future", Forecasts[is_chosen] = TRUE (), Forecasts[horizon] <= _lt )
+			        VAR _ss = ROUNDUP ( _z * Products[sd_weekly_52w] * SQRT ( _lt ), 0 )
+			        VAR _rop = ROUNDUP ( _ltd, 0 ) + _ss
+			        VAR _cost = Products[avg_price] * _ratio
+			        VAR _eoq = ROUNDUP ( SQRT ( 2 * Products[avg_weekly_52w] * 52 * _order / ( _hold * _cost ) ), 0 )
+			        VAR _cur = ROUND ( _cover * Products[avg_weekly_52w], 0 )
+			        RETURN 1 - NORM.S.DIST ( DIVIDE ( _cur - _ltd, Products[sd_weekly_52w] * SQRT ( _lt ) ), TRUE )
+			    )
+		formatString: 0%
+		displayFolder: 2 Policy (units)
+		lineageTag: 4301850d-4f18-539d-8f0f-a5d65734b826
+
+	/// Average recommended stock / average weekly demand
+	measure 'Weeks of Cover (Recommended)' = DIVIDE ( [Safety Stock] + [EOQ] / 2, SUM ( Products[avg_weekly_52w] ) )
+		formatString: 0.0
+		displayFolder: 2 Policy (units)
+		lineageTag: 7345a028-f273-5936-8532-bc722accef83
+
+	measure 'Weeks of Cover (Current)' = DIVIDE ( [Current Stock], SUM ( Products[avg_weekly_52w] ) )
+		formatString: 0.0
+		displayFolder: 2 Policy (units)
+		lineageTag: 57864700-bf73-5980-bd10-57e468897b25
+
+	/// Assumed current stock at cost
+	measure 'Current Stock Value' =
+			VAR _lt = [Lead Time (wks)]
+			VAR _z = [z]
+			VAR _cover = [Current Cover Weeks]
+			VAR _ratio = [Unit Cost Ratio]
+			VAR _hold = [Holding Cost Rate]
+			VAR _order = [Ordering Cost]
+			RETURN
+			    SUMX (
+			        Products,
+			        VAR _ltd = CALCULATE ( SUM ( Forecasts[forecast_units] ), Forecasts[run] = "Future", Forecasts[is_chosen] = TRUE (), Forecasts[horizon] <= _lt )
+			        VAR _ss = ROUNDUP ( _z * Products[sd_weekly_52w] * SQRT ( _lt ), 0 )
+			        VAR _rop = ROUNDUP ( _ltd, 0 ) + _ss
+			        VAR _cost = Products[avg_price] * _ratio
+			        VAR _eoq = ROUNDUP ( SQRT ( 2 * Products[avg_weekly_52w] * 52 * _order / ( _hold * _cost ) ), 0 )
+			        VAR _cur = ROUND ( _cover * Products[avg_weekly_52w], 0 )
+			        RETURN _cur * _cost
+			    )
+		formatString: £#,0
+		displayFolder: 3 Stock value (£)
+		lineageTag: dcd784f2-d869-5860-a7b9-0b042399836a
+
+	/// Average stock under the policy = safety stock + EOQ / 2, at cost
+	measure 'Recommended Stock Value' =
+			VAR _lt = [Lead Time (wks)]
+			VAR _z = [z]
+			VAR _cover = [Current Cover Weeks]
+			VAR _ratio = [Unit Cost Ratio]
+			VAR _hold = [Holding Cost Rate]
+			VAR _order = [Ordering Cost]
+			RETURN
+			    SUMX (
+			        Products,
+			        VAR _ltd = CALCULATE ( SUM ( Forecasts[forecast_units] ), Forecasts[run] = "Future", Forecasts[is_chosen] = TRUE (), Forecasts[horizon] <= _lt )
+			        VAR _ss = ROUNDUP ( _z * Products[sd_weekly_52w] * SQRT ( _lt ), 0 )
+			        VAR _rop = ROUNDUP ( _ltd, 0 ) + _ss
+			        VAR _cost = Products[avg_price] * _ratio
+			        VAR _eoq = ROUNDUP ( SQRT ( 2 * Products[avg_weekly_52w] * 52 * _order / ( _hold * _cost ) ), 0 )
+			        VAR _cur = ROUND ( _cover * Products[avg_weekly_52w], 0 )
+			        RETURN ( _ss + _eoq / 2 ) * _cost
+			    )
+		formatString: £#,0
+		displayFolder: 3 Stock value (£)
+		lineageTag: 438a5678-a204-5884-b1a7-db7604c7c064
+
+	/// Current stock value minus recommended (negative = more stock needed)
+	measure 'Working Capital Freed' = [Current Stock Value] - [Recommended Stock Value]
+		formatString: £#,0
+		displayFolder: 3 Stock value (£)
+		lineageTag: ba6a411f-2456-5074-8d74-ba97580035ed
+
+	measure 'Safety Stock Value' =
+			VAR _lt = [Lead Time (wks)]
+			VAR _z = [z]
+			VAR _cover = [Current Cover Weeks]
+			VAR _ratio = [Unit Cost Ratio]
+			VAR _hold = [Holding Cost Rate]
+			VAR _order = [Ordering Cost]
+			RETURN
+			    SUMX (
+			        Products,
+			        VAR _ltd = CALCULATE ( SUM ( Forecasts[forecast_units] ), Forecasts[run] = "Future", Forecasts[is_chosen] = TRUE (), Forecasts[horizon] <= _lt )
+			        VAR _ss = ROUNDUP ( _z * Products[sd_weekly_52w] * SQRT ( _lt ), 0 )
+			        VAR _rop = ROUNDUP ( _ltd, 0 ) + _ss
+			        VAR _cost = Products[avg_price] * _ratio
+			        VAR _eoq = ROUNDUP ( SQRT ( 2 * Products[avg_weekly_52w] * 52 * _order / ( _hold * _cost ) ), 0 )
+			        VAR _cur = ROUND ( _cover * Products[avg_weekly_52w], 0 )
+			        RETURN _ss * _cost
+			    )
+		formatString: £#,0
+		displayFolder: 3 Stock value (£)
+		lineageTag: e45d2edf-370b-5b9c-b028-327341d4fbf5
+
+	measure 'Suggested Order Value' =
+			VAR _lt = [Lead Time (wks)]
+			VAR _z = [z]
+			VAR _cover = [Current Cover Weeks]
+			VAR _ratio = [Unit Cost Ratio]
+			VAR _hold = [Holding Cost Rate]
+			VAR _order = [Ordering Cost]
+			RETURN
+			    SUMX (
+			        Products,
+			        VAR _ltd = CALCULATE ( SUM ( Forecasts[forecast_units] ), Forecasts[run] = "Future", Forecasts[is_chosen] = TRUE (), Forecasts[horizon] <= _lt )
+			        VAR _ss = ROUNDUP ( _z * Products[sd_weekly_52w] * SQRT ( _lt ), 0 )
+			        VAR _rop = ROUNDUP ( _ltd, 0 ) + _ss
+			        VAR _cost = Products[avg_price] * _ratio
+			        VAR _eoq = ROUNDUP ( SQRT ( 2 * Products[avg_weekly_52w] * 52 * _order / ( _hold * _cost ) ), 0 )
+			        VAR _cur = ROUND ( _cover * Products[avg_weekly_52w], 0 )
+			        RETURN IF ( _cur <= _rop, ( _rop + _eoq - _cur ) * _cost, 0 )
+			    )
+		formatString: £#,0
+		displayFolder: 3 Stock value (£)
+		lineageTag: 49acec48-aa7c-526c-aff5-fdac34fb8e35
+
+	measure 'Holding Cost per Year' = [Recommended Stock Value] * [Holding Cost Rate]
+		formatString: £#,0
+		displayFolder: 3 Stock value (£)
+		lineageTag: 3adc8d44-5088-5bcb-b59d-cd6d1dfe3f2e
+
+	/// Safety stock value if every SKU had the service level on the axis (trade-off curve)
+	measure 'Safety Stock Value at Curve SL' =
+			VAR _sl = MAX ( 'Service Level Curve'[Curve Service Level] )
+			VAR _lt = [Lead Time (wks)]
+			VAR _ratio = [Unit Cost Ratio]
+			RETURN
+			    SUMX ( Products, NORM.S.INV ( _sl ) * Products[sd_weekly_52w] * SQRT ( _lt ) * Products[avg_price] * _ratio )
+		formatString: £#,0
+		displayFolder: 3 Stock value (£)
+		lineageTag: ee93ee58-595b-5ae0-ab06-fe389d188820
+
+	/// Net sales value, last 52 weeks
+	measure 'Net Sales 52w' = SUM ( Products[net_value_52w] )
+		formatString: £#,0
+		displayFolder: 3 Stock value (£)
+		lineageTag: 717b3621-37b3-5acf-9d37-364f0b8c9c94
+
+	measure 'Net Sales 52w (£k)' = [Net Sales 52w] / 1000
+		formatString: £#,0.0"k"
+		displayFolder: 3 Stock value (£)
+		lineageTag: 95dfa9fc-74ef-5d65-8a57-dad3ff1b0518
+
+	measure 'Recommended Stock (£k)' = [Recommended Stock Value] / 1000
+		formatString: £#,0.0"k"
+		displayFolder: 3 Stock value (£)
+		lineageTag: 65124728-7248-5da4-9987-3344134daa39
+
+	/// Share of the planning range's net sales value
+	measure 'Value Share %' = DIVIDE ( [Net Sales 52w], CALCULATE ( [Net Sales 52w], ALL ( Products ) ) )
+		formatString: 0.0%
+		displayFolder: 3 Stock value (£)
+		lineageTag: 439ed382-52ad-5f0e-85f4-071a4a66fff2
+
+	/// Coefficient of variation of weekly demand
+	measure 'Avg CV' = AVERAGE ( Products[cv] )
+		formatString: 0.00
+		displayFolder: 2 Policy (units)
+		lineageTag: 4907b317-3a4f-53fb-a204-32b34f11f7c7
+
+	/// Weekly demand, net of returns
+	measure 'Actual Units' = SUM ( WeeklyDemand[demand_units] )
+		formatString: #,0
+		displayFolder: 4 Forecast accuracy
+		lineageTag: efd6b4ca-b947-51dc-8a46-a965195d23e3
+
+	/// Backtest weeks 92-103 and future weeks 104-115
+	measure 'Forecast (Chosen Method)' = CALCULATE ( SUM ( Forecasts[forecast_units] ), Forecasts[is_chosen] = TRUE () )
+		formatString: #,0
+		displayFolder: 4 Forecast accuracy
+		lineageTag: 773a71e8-1e60-587d-95cd-16154cd23049
+
+	/// Use with Forecasts[method] in the legend
+	measure 'Forecast Units' = SUM ( Forecasts[forecast_units] )
+		formatString: #,0
+		displayFolder: 4 Forecast accuracy
+		lineageTag: 0399e77b-119c-5ad7-a301-43b1e8643509
+
+	/// Sum |forecast - actual| / sum actual, test weeks
+	measure 'WAPE' = DIVIDE ( SUM ( Accuracy[sum_abs_error] ), SUM ( Accuracy[actual_units] ) )
+		formatString: 0%
+		displayFolder: 4 Forecast accuracy
+		lineageTag: 9de515a4-5c73-50bf-b866-6f9b8a319213
+
+	/// Sum (forecast - actual) / sum actual. Negative = under-forecast
+	measure 'Bias' = DIVIDE ( SUM ( Accuracy[sum_error] ), SUM ( Accuracy[actual_units] ) )
+		formatString: +0%;-0%;0%
+		displayFolder: 4 Forecast accuracy
+		lineageTag: 7e9fb435-638c-5874-9063-aace3f9e92d2
+
+	/// WAPE of each SKU's chosen method
+	measure 'WAPE (Chosen)' =
+			VAR _abs = SUMX ( Products, VAR _m = Products[Chosen Method] RETURN CALCULATE ( SUM ( Accuracy[sum_abs_error] ), Accuracy[method] = _m ) )
+			VAR _act = SUMX ( Products, VAR _m = Products[Chosen Method] RETURN CALCULATE ( SUM ( Accuracy[actual_units] ), Accuracy[method] = _m ) )
+			RETURN DIVIDE ( _abs, _act )
+		formatString: 0%
+		displayFolder: 4 Forecast accuracy
+		lineageTag: 3d34522b-02aa-5d9a-931e-179c7a7e6e7b
+
+	measure 'Bias (Chosen)' =
+			VAR _err = SUMX ( Products, VAR _m = Products[Chosen Method] RETURN CALCULATE ( SUM ( Accuracy[sum_error] ), Accuracy[method] = _m ) )
+			VAR _act = SUMX ( Products, VAR _m = Products[Chosen Method] RETURN CALCULATE ( SUM ( Accuracy[actual_units] ), Accuracy[method] = _m ) )
+			RETURN DIVIDE ( _err, _act )
+		formatString: +0%;-0%;0%
+		displayFolder: 4 Forecast accuracy
+		lineageTag: ec97e3fc-0d8a-51fb-8157-fb83b27b7557
+
+	/// WAPE + |bias| for a class and method (lower = better)
+	measure 'Class Score' = SUM ( MethodByClass[score] )
+		formatString: 0.00
+		displayFolder: 4 Forecast accuracy
+		lineageTag: bf0f6b6b-6b15-5ee5-8eb1-8f011029f77d
+
+	column Value
+		dataType: int64
+		isHidden
+		lineageTag: c01d2deb-21e4-5615-9e14-03400a122c9d
+		summarizeBy: none
+		sourceColumn: [Value]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition _Measures = calculated
+		mode: import
+		source =
+				ROW ( "Value", 0 )
+
+	annotation PBI_ResultType = Table

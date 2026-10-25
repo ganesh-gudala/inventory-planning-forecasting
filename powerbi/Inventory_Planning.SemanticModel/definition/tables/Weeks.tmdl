@@ -1,0 +1,66 @@
+table Weeks
+	lineageTag: ff5353be-9abf-5ef2-a53b-2c11487cf2ed
+
+	column week_no
+		dataType: int64
+		formatString: 0
+		lineageTag: 8b0ddc11-cd72-5177-8624-b6728e1d9d97
+		summarizeBy: sum
+		sourceColumn: week_no
+
+		annotation SummarizationSetBy = Automatic
+
+	column week_start
+		dataType: dateTime
+		formatString: dd-mmm-yyyy
+		lineageTag: a983d2ae-9e49-52f2-8f2d-f99f23919d1a
+		summarizeBy: none
+		sourceColumn: week_start
+
+		annotation SummarizationSetBy = Automatic
+
+	column period
+		dataType: string
+		lineageTag: 3a109c97-54b8-5a69-9e52-94d0006443f8
+		summarizeBy: none
+		sourceColumn: period
+
+		annotation SummarizationSetBy = Automatic
+
+	column in_last_52
+		dataType: boolean
+		lineageTag: 1097b21c-4339-5238-af78-841f4d875f4d
+		summarizeBy: none
+		sourceColumn: in_last_52
+
+		annotation SummarizationSetBy = Automatic
+
+	column year
+		dataType: int64
+		formatString: 0
+		lineageTag: b431a857-9378-505a-923a-f1428ce5a311
+		summarizeBy: none
+		sourceColumn: year
+
+		annotation SummarizationSetBy = Automatic
+
+	column month
+		dataType: string
+		lineageTag: 662c8d15-b763-5cd7-bf0e-3562268cb6ea
+		summarizeBy: none
+		sourceColumn: month
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Weeks = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(DataFolder & "weeks.csv"), [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    Blanks = Table.ReplaceValue(Promoted, "", null, Replacer.ReplaceValue, Table.ColumnNames(Promoted)),
+				    Typed = Table.TransformColumnTypes(Blanks, {{"week_no", Int64.Type}, {"week_start", type date}, {"period", type text}, {"in_last_52", type logical}, {"year", Int64.Type}, {"month", type text}}, "en-GB")
+				in
+				    Typed
+
+	annotation PBI_ResultType = Table

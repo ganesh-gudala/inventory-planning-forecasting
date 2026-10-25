@@ -1,0 +1,19 @@
+relationship 0ac331f6-217c-5bcd-953d-ece9906aaefd
+	fromColumn: WeeklyDemand.stock_code
+	toColumn: Products.stock_code
+
+relationship ce126edc-5c39-539c-841c-ab673d32d4e9
+	fromColumn: WeeklyDemand.week_no
+	toColumn: Weeks.week_no
+
+relationship e868c5ad-6ff1-5a47-96db-f371f12e7e76
+	fromColumn: Forecasts.stock_code
+	toColumn: Products.stock_code
+
+relationship 6120f852-bad1-5f44-8d62-5e063f94b9fb
+	fromColumn: Forecasts.week_no
+	toColumn: Weeks.week_no
+
+relationship 69df687a-6a65-55ce-b5cb-947a85cab84c
+	fromColumn: Accuracy.stock_code
+	toColumn: Products.stock_code

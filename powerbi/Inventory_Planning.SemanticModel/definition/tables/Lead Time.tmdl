@@ -1,0 +1,18 @@
+table 'Lead Time'
+	lineageTag: 6d9b005c-9483-5cff-86c0-9b044e073dcc
+
+	column 'Lead Time (weeks)'
+		dataType: double
+		formatString: 0
+		lineageTag: 787eb23c-b81e-5e4e-bcf2-526d7b988db5
+		summarizeBy: none
+		sourceColumn: [Lead Time (weeks)]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Lead Time' = calculated
+		mode: import
+		source =
+				SELECTCOLUMNS ( GENERATESERIES ( 1, 12, 1 ), "Lead Time (weeks)", [Value] )
+
+	annotation PBI_ResultType = Table

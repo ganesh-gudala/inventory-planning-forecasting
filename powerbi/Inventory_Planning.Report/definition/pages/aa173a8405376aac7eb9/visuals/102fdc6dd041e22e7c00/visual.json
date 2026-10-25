@@ -1,0 +1,97 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.13.0/schema.json",
+  "name": "102fdc6dd041e22e7c00",
+  "position": {
+    "x": 20,
+    "y": 278,
+    "z": 3000,
+    "width": 400,
+    "height": 190,
+    "tabOrder": 3000
+  },
+  "visual": {
+    "visualType": "pivotTable",
+    "query": {
+      "queryState": {
+        "Rows": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Products"
+                    }
+                  },
+                  "Property": "abc"
+                }
+              },
+              "queryRef": "Products.abc",
+              "nativeQueryRef": "abc",
+              "displayName": "ABC"
+            }
+          ]
+        },
+        "Columns": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Products"
+                    }
+                  },
+                  "Property": "xyz"
+                }
+              },
+              "queryRef": "Products.xyz",
+              "nativeQueryRef": "xyz",
+              "displayName": "XYZ"
+            }
+          ]
+        },
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Value Share %"
+                }
+              },
+              "queryRef": "_Measures.Value Share %",
+              "nativeQueryRef": "Value Share %"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Share of sales value per box (last 52 weeks)'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,23 @@
+model Model
+	culture: en-GB
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	discourageImplicitMeasures
+	sourceQueryCulture: en-GB
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation PBI_QueryOrder = ["DataFolder", "Products", "WeeklyDemand", "Forecasts", "Accuracy", "MethodByClass", "Weeks"]
+
+annotation __PBI_TimeIntelligenceEnabled = 0
+
+ref table Products
+ref table WeeklyDemand
+ref table Forecasts
+ref table Accuracy
+ref table MethodByClass
+ref table Weeks
+ref table 'Service Level'
+ref table 'Lead Time'
+ref table 'Service Level Curve'
+ref table _Measures

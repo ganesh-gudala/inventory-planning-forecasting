@@ -1,0 +1,111 @@
+table MethodByClass
+	lineageTag: 784c33fd-0a29-5165-85e5-3c3e6b648a5e
+
+	column abc_xyz
+		dataType: string
+		lineageTag: ac220417-dd71-5fc6-aed0-30e3cdf27760
+		summarizeBy: none
+		sourceColumn: abc_xyz
+
+		annotation SummarizationSetBy = Automatic
+
+	column method
+		dataType: string
+		lineageTag: 21f906bc-7e83-544a-8e24-64942c236cd0
+		summarizeBy: none
+		sourceColumn: method
+
+		annotation SummarizationSetBy = Automatic
+
+	column skus
+		dataType: int64
+		formatString: 0
+		lineageTag: e9c813ef-507b-5a3d-a81c-d95dc35c3c87
+		summarizeBy: sum
+		sourceColumn: skus
+
+		annotation SummarizationSetBy = Automatic
+
+	column actual_units
+		dataType: int64
+		formatString: #,0
+		lineageTag: b8cfaabf-8834-5917-9a27-dfa559284a22
+		summarizeBy: sum
+		sourceColumn: actual_units
+
+		annotation SummarizationSetBy = Automatic
+
+	column sum_abs_error
+		dataType: double
+		formatString: #,0
+		lineageTag: 677628ec-e0ce-55e5-b341-cf0ccbf41375
+		summarizeBy: sum
+		sourceColumn: sum_abs_error
+
+		annotation SummarizationSetBy = Automatic
+
+	column sum_error
+		dataType: double
+		formatString: #,0
+		lineageTag: 5bef1ddb-5ae5-59eb-9267-da25f7f20b6f
+		summarizeBy: sum
+		sourceColumn: sum_error
+
+		annotation SummarizationSetBy = Automatic
+
+	column wape
+		dataType: double
+		formatString: 0%
+		lineageTag: a57d0b9c-1d21-5c04-b54a-6e696bfd20ee
+		summarizeBy: sum
+		sourceColumn: wape
+
+		annotation SummarizationSetBy = Automatic
+
+	column bias
+		dataType: double
+		formatString: +0%;-0%;0%
+		lineageTag: 79f1bfac-544c-5619-b933-217210eb3cfd
+		summarizeBy: sum
+		sourceColumn: bias
+
+		annotation SummarizationSetBy = Automatic
+
+	column score
+		dataType: double
+		formatString: 0.00
+		lineageTag: 85171403-4fd7-513a-9c53-c0a010d13e64
+		summarizeBy: sum
+		sourceColumn: score
+
+		annotation SummarizationSetBy = Automatic
+
+	column rank
+		dataType: int64
+		formatString: 0
+		lineageTag: cfadfb5e-380e-587f-95df-19f1102296f3
+		summarizeBy: sum
+		sourceColumn: rank
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_best
+		dataType: boolean
+		lineageTag: 0ac27861-454c-5522-a8f5-2fc2b056f8d4
+		summarizeBy: none
+		sourceColumn: is_best
+
+		annotation SummarizationSetBy = Automatic
+
+	partition MethodByClass = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(DataFolder & "method_by_class.csv"), [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    Blanks = Table.ReplaceValue(Promoted, "", null, Replacer.ReplaceValue, Table.ColumnNames(Promoted)),
+				    Typed = Table.TransformColumnTypes(Blanks, {{"abc_xyz", type text}, {"method", type text}, {"skus", Int64.Type}, {"actual_units", Int64.Type}, {"sum_abs_error", type number}, {"sum_error", type number}, {"wape", type number}, {"bias", type number}, {"score", type number}, {"rank", Int64.Type}, {"is_best", type logical}}, "en-GB")
+				in
+				    Typed
+
+	annotation PBI_ResultType = Table

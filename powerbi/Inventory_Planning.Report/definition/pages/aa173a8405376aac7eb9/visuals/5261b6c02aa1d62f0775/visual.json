@@ -1,0 +1,97 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.13.0/schema.json",
+  "name": "5261b6c02aa1d62f0775",
+  "position": {
+    "x": 20,
+    "y": 76,
+    "z": 2000,
+    "width": 400,
+    "height": 190,
+    "tabOrder": 2000
+  },
+  "visual": {
+    "visualType": "pivotTable",
+    "query": {
+      "queryState": {
+        "Rows": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Products"
+                    }
+                  },
+                  "Property": "abc"
+                }
+              },
+              "queryRef": "Products.abc",
+              "nativeQueryRef": "abc",
+              "displayName": "ABC"
+            }
+          ]
+        },
+        "Columns": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Products"
+                    }
+                  },
+                  "Property": "xyz"
+                }
+              },
+              "queryRef": "Products.xyz",
+              "nativeQueryRef": "xyz",
+              "displayName": "XYZ"
+            }
+          ]
+        },
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "SKUs"
+                }
+              },
+              "queryRef": "_Measures.SKUs",
+              "nativeQueryRef": "SKUs"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'SKUs per box'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

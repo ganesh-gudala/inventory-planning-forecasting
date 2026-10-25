@@ -1,0 +1,98 @@
+table WeeklyDemand
+	lineageTag: 2681a329-5c68-5539-9046-ece081cca8da
+
+	column stock_code
+		dataType: string
+		isHidden
+		lineageTag: fda7ae9d-3de0-5d28-aac0-3ac791837d79
+		summarizeBy: none
+		sourceColumn: stock_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column week_no
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 5c4f334e-da49-585c-84cf-870f679ca256
+		summarizeBy: sum
+		sourceColumn: week_no
+
+		annotation SummarizationSetBy = Automatic
+
+	column week_start
+		dataType: dateTime
+		isHidden
+		formatString: dd-mmm-yyyy
+		lineageTag: a79524c5-cd74-57e5-bebe-be318ed1090a
+		summarizeBy: none
+		sourceColumn: week_start
+
+		annotation SummarizationSetBy = Automatic
+
+	column period
+		dataType: string
+		isHidden
+		lineageTag: 52db2ac9-c590-578f-b7ee-725be2b4c6a9
+		summarizeBy: none
+		sourceColumn: period
+
+		annotation SummarizationSetBy = Automatic
+
+	column units_sold
+		dataType: int64
+		formatString: #,0
+		lineageTag: 48017a82-4587-5e03-affe-0e492b892ff3
+		summarizeBy: sum
+		sourceColumn: units_sold
+
+		annotation SummarizationSetBy = Automatic
+
+	column units_returned
+		dataType: int64
+		formatString: #,0
+		lineageTag: ae7f9ecd-8485-55f1-b0ca-c0b5a719482e
+		summarizeBy: sum
+		sourceColumn: units_returned
+
+		annotation SummarizationSetBy = Automatic
+
+	column demand_units
+		dataType: int64
+		formatString: #,0
+		lineageTag: bacae49f-1643-5853-a271-2a2380c102ec
+		summarizeBy: sum
+		sourceColumn: demand_units
+
+		annotation SummarizationSetBy = Automatic
+
+	column sales_value
+		dataType: double
+		formatString: £#,0
+		lineageTag: b567e66a-e7eb-5b82-aa7b-bb3993e05753
+		summarizeBy: sum
+		sourceColumn: sales_value
+
+		annotation SummarizationSetBy = Automatic
+
+	column net_value
+		dataType: double
+		formatString: £#,0
+		lineageTag: fae22cd3-9082-5aa0-9d17-e80cfac2a5c7
+		summarizeBy: sum
+		sourceColumn: net_value
+
+		annotation SummarizationSetBy = Automatic
+
+	partition WeeklyDemand = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(DataFolder & "weekly_demand.csv"), [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    Blanks = Table.ReplaceValue(Promoted, "", null, Replacer.ReplaceValue, Table.ColumnNames(Promoted)),
+				    Typed = Table.TransformColumnTypes(Blanks, {{"stock_code", type text}, {"week_no", Int64.Type}, {"week_start", type date}, {"period", type text}, {"units_sold", Int64.Type}, {"units_returned", Int64.Type}, {"demand_units", Int64.Type}, {"sales_value", type number}, {"net_value", type number}}, "en-GB")
+				in
+				    Typed
+
+	annotation PBI_ResultType = Table

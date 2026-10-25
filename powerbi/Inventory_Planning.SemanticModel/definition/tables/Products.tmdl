@@ -1,0 +1,167 @@
+table Products
+	lineageTag: e30d7507-371e-58e6-b14a-5659a46c660e
+
+	column stock_code
+		dataType: string
+		lineageTag: b49cfd01-4f18-5dc7-b340-b18373b61582
+		summarizeBy: none
+		sourceColumn: stock_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column description
+		dataType: string
+		lineageTag: 91120448-8c94-5f0e-950e-c4b99bf460fe
+		summarizeBy: none
+		sourceColumn: description
+
+		annotation SummarizationSetBy = Automatic
+
+	column value_rank
+		dataType: int64
+		formatString: 0
+		lineageTag: a432f8ff-965a-5ef4-9acc-8bab01be9dc5
+		summarizeBy: sum
+		sourceColumn: value_rank
+
+		annotation SummarizationSetBy = Automatic
+
+	column net_value_52w
+		dataType: double
+		formatString: £#,0
+		lineageTag: 9e335239-9a1a-5c1d-91ec-428ae758d28c
+		summarizeBy: sum
+		sourceColumn: net_value_52w
+
+		annotation SummarizationSetBy = Automatic
+
+	column units_52w
+		dataType: int64
+		formatString: #,0
+		lineageTag: 0cb0e864-dbfd-58e8-accd-9801eb812943
+		summarizeBy: sum
+		sourceColumn: units_52w
+
+		annotation SummarizationSetBy = Automatic
+
+	column avg_price
+		dataType: double
+		formatString: £#,0.00
+		lineageTag: 75f306e3-f450-5cff-88e7-9aa028f5d7bd
+		summarizeBy: sum
+		sourceColumn: avg_price
+
+		annotation SummarizationSetBy = Automatic
+
+	column avg_weekly_52w
+		dataType: double
+		formatString: #,0.0
+		lineageTag: 3d9265e2-47b6-5d15-8c4d-312e93c19ee7
+		summarizeBy: sum
+		sourceColumn: avg_weekly_52w
+
+		annotation SummarizationSetBy = Automatic
+
+	column sd_weekly_52w
+		dataType: double
+		formatString: #,0.0
+		lineageTag: a8c97e1b-dfe2-5b29-93e5-769abf579dbc
+		summarizeBy: sum
+		sourceColumn: sd_weekly_52w
+
+		annotation SummarizationSetBy = Automatic
+
+	column cv
+		dataType: double
+		formatString: 0.00
+		lineageTag: 2cf8288c-f61f-526d-9e47-8541c44a8683
+		summarizeBy: sum
+		sourceColumn: cv
+
+		annotation SummarizationSetBy = Automatic
+
+	column cum_value_share
+		dataType: double
+		formatString: 0.0%
+		lineageTag: c22a9bbb-1807-5e5f-a57e-286677fb09b8
+		summarizeBy: sum
+		sourceColumn: cum_value_share
+
+		annotation SummarizationSetBy = Automatic
+
+	column abc
+		dataType: string
+		lineageTag: dc759ca3-28cf-50dc-b852-cadf2af6e9bb
+		summarizeBy: none
+		sourceColumn: abc
+
+		annotation SummarizationSetBy = Automatic
+
+	column xyz
+		dataType: string
+		lineageTag: 01b52064-1d06-5b90-8080-2ba222d5b731
+		summarizeBy: none
+		sourceColumn: xyz
+
+		annotation SummarizationSetBy = Automatic
+
+	column abc_xyz
+		dataType: string
+		lineageTag: cf4e0f8d-a5cb-5890-a27e-17da9ffc3acf
+		summarizeBy: none
+		sourceColumn: abc_xyz
+
+		annotation SummarizationSetBy = Automatic
+
+	column weeks_with_sales
+		dataType: int64
+		formatString: 0
+		lineageTag: b969e7bc-c6f9-5a84-afcb-6dc8de204bec
+		summarizeBy: sum
+		sourceColumn: weeks_with_sales
+
+		annotation SummarizationSetBy = Automatic
+
+	column peak_uplift
+		dataType: double
+		formatString: 0.00
+		lineageTag: a0417e0a-9718-543a-9399-48fe18140c32
+		summarizeBy: sum
+		sourceColumn: peak_uplift
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_seasonal
+		dataType: boolean
+		lineageTag: cd687ff4-59fc-57eb-96f6-10aec1768ed7
+		summarizeBy: none
+		sourceColumn: is_seasonal
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Chosen Method' = CALCULATE ( FIRSTNONBLANK ( Forecasts[method], 1 ), Forecasts[is_chosen] = TRUE () )
+		dataType: string
+		lineageTag: fd160981-d940-5b01-8657-6a7b1717b604
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Product' = Products[stock_code] & " · " & Products[description]
+		dataType: string
+		lineageTag: b85409ca-32f0-563f-9669-ebe41e5fc0d7
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Products = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(DataFolder & "sku_list.csv"), [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    Blanks = Table.ReplaceValue(Promoted, "", null, Replacer.ReplaceValue, Table.ColumnNames(Promoted)),
+				    Typed = Table.TransformColumnTypes(Blanks, {{"stock_code", type text}, {"description", type text}, {"value_rank", Int64.Type}, {"net_value_52w", type number}, {"units_52w", Int64.Type}, {"avg_price", type number}, {"avg_weekly_52w", type number}, {"sd_weekly_52w", type number}, {"cv", type number}, {"cum_value_share", type number}, {"abc", type text}, {"xyz", type text}, {"abc_xyz", type text}, {"weeks_with_sales", Int64.Type}, {"peak_uplift", type number}, {"is_seasonal", type logical}}, "en-GB")
+				in
+				    Typed
+
+	annotation PBI_ResultType = Table

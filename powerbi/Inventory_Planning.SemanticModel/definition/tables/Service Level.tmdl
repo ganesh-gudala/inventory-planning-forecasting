@@ -1,0 +1,18 @@
+table 'Service Level'
+	lineageTag: cc5e59a3-a67e-583b-8ee1-3863c479eb9f
+
+	column 'Service Level'
+		dataType: double
+		formatString: 0.0%
+		lineageTag: f9cd2fa5-2eb3-56a8-898e-27e40f860959
+		summarizeBy: none
+		sourceColumn: [Service Level]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Service Level' = calculated
+		mode: import
+		source =
+				SELECTCOLUMNS ( GENERATESERIES ( 800, 995, 5 ), "Service Level", [Value] / 1000 )
+
+	annotation PBI_ResultType = Table

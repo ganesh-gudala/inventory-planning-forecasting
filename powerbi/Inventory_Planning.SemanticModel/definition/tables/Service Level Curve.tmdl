@@ -1,0 +1,18 @@
+table 'Service Level Curve'
+	lineageTag: 9aa35b47-2405-50af-8c98-0e48e0f63956
+
+	column 'Curve Service Level'
+		dataType: double
+		formatString: 0.0%
+		lineageTag: 903735cf-a77b-50df-ac83-17d281590db4
+		summarizeBy: none
+		sourceColumn: [Curve Service Level]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Service Level Curve' = calculated
+		mode: import
+		source =
+				SELECTCOLUMNS ( GENERATESERIES ( 800, 995, 5 ), "Curve Service Level", [Value] / 1000 )
+
+	annotation PBI_ResultType = Table

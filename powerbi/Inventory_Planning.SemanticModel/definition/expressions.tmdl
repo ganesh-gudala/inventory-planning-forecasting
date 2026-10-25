@@ -1,0 +1,6 @@
+/// Folder that holds the processed CSV files (must end with a backslash)
+expression DataFolder = "C:\data\inventory\" meta [IsParameterQuery = true, Type = "Text", IsParameterQueryRequired = true]
+	lineageTag: 57cd09eb-2890-5aa0-a3ef-afd0cecd3159
+
+	annotation PBI_ResultType = Text
+

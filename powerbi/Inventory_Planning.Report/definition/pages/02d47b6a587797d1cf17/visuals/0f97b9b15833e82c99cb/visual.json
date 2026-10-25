@@ -1,0 +1,92 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.13.0/schema.json",
+  "name": "0f97b9b15833e82c99cb",
+  "position": {
+    "x": 20,
+    "y": 168,
+    "z": 10000,
+    "width": 760,
+    "height": 262,
+    "tabOrder": 10000
+  },
+  "visual": {
+    "visualType": "clusteredColumnChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Products"
+                    }
+                  },
+                  "Property": "abc_xyz"
+                }
+              },
+              "queryRef": "Products.abc_xyz",
+              "nativeQueryRef": "abc_xyz",
+              "displayName": "Class"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Current Stock Value"
+                }
+              },
+              "queryRef": "_Measures.Current Stock Value",
+              "nativeQueryRef": "Current Stock Value"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Recommended Stock Value"
+                }
+              },
+              "queryRef": "_Measures.Recommended Stock Value",
+              "nativeQueryRef": "Recommended Stock Value"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Stock value by ABC-XYZ class: current vs recommended (£)'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

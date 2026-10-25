@@ -1,0 +1,122 @@
+table Accuracy
+	lineageTag: f92c45d3-660a-50e4-aa35-85536fc50d63
+
+	column stock_code
+		dataType: string
+		isHidden
+		lineageTag: 7372bd75-eb6b-569c-bb5c-8e463f542ec7
+		summarizeBy: none
+		sourceColumn: stock_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column method
+		dataType: string
+		lineageTag: d607deb2-be0e-52b3-8181-d433c8dd0d42
+		summarizeBy: none
+		sourceColumn: method
+
+		annotation SummarizationSetBy = Automatic
+
+	column abc_xyz
+		dataType: string
+		isHidden
+		lineageTag: 6ff4e1a4-57ae-56c1-8da7-a41ad9d22cce
+		summarizeBy: none
+		sourceColumn: abc_xyz
+
+		annotation SummarizationSetBy = Automatic
+
+	column actual_units
+		dataType: int64
+		formatString: #,0
+		lineageTag: ab9ae84e-ce93-5574-a9df-95937c1092eb
+		summarizeBy: sum
+		sourceColumn: actual_units
+
+		annotation SummarizationSetBy = Automatic
+
+	column forecast_units
+		dataType: double
+		formatString: #,0
+		lineageTag: 5134fd6b-c35d-51fe-b950-6f7938a213e5
+		summarizeBy: sum
+		sourceColumn: forecast_units
+
+		annotation SummarizationSetBy = Automatic
+
+	column sum_error
+		dataType: double
+		formatString: #,0
+		lineageTag: 532a2f07-c907-55fd-bd8e-3142f8e330bd
+		summarizeBy: sum
+		sourceColumn: sum_error
+
+		annotation SummarizationSetBy = Automatic
+
+	column sum_abs_error
+		dataType: double
+		formatString: #,0
+		lineageTag: 4efecc83-f42b-5fa3-adce-dbf54d525f18
+		summarizeBy: sum
+		sourceColumn: sum_abs_error
+
+		annotation SummarizationSetBy = Automatic
+
+	column sum_sq_error
+		dataType: double
+		formatString: #,0
+		lineageTag: 6145dcdf-ecae-5ee2-bcd5-38147806f5d1
+		summarizeBy: sum
+		sourceColumn: sum_sq_error
+
+		annotation SummarizationSetBy = Automatic
+
+	column wape
+		dataType: double
+		formatString: 0%
+		lineageTag: 2475f3dd-dc91-5e21-b88c-32d0584d835c
+		summarizeBy: sum
+		sourceColumn: wape
+
+		annotation SummarizationSetBy = Automatic
+
+	column bias
+		dataType: double
+		formatString: 0%
+		lineageTag: 791fe44c-741c-5929-b221-0a5af4f9a0a5
+		summarizeBy: sum
+		sourceColumn: bias
+
+		annotation SummarizationSetBy = Automatic
+
+	column mape
+		dataType: double
+		formatString: 0%
+		lineageTag: 0514c694-63fc-554f-bed5-c4f1fd143a3c
+		summarizeBy: sum
+		sourceColumn: mape
+
+		annotation SummarizationSetBy = Automatic
+
+	column weeks_nonzero
+		dataType: int64
+		formatString: 0
+		lineageTag: b521ef17-a984-554d-b14f-1fe638a7129c
+		summarizeBy: sum
+		sourceColumn: weeks_nonzero
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Accuracy = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(DataFolder & "forecast_accuracy.csv"), [Delimiter = ",", Encoding = 65001, QuoteStyle = QuoteStyle.Csv]),
+				    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    Blanks = Table.ReplaceValue(Promoted, "", null, Replacer.ReplaceValue, Table.ColumnNames(Promoted)),
+				    Typed = Table.TransformColumnTypes(Blanks, {{"stock_code", type text}, {"method", type text}, {"abc_xyz", type text}, {"actual_units", Int64.Type}, {"forecast_units", type number}, {"sum_error", type number}, {"sum_abs_error", type number}, {"sum_sq_error", type number}, {"wape", type number}, {"bias", type number}, {"mape", type number}, {"weeks_nonzero", Int64.Type}}, "en-GB")
+				in
+				    Typed
+
+	annotation PBI_ResultType = Table

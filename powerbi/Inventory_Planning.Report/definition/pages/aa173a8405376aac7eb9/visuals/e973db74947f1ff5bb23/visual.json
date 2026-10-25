@@ -1,0 +1,97 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.13.0/schema.json",
+  "name": "e973db74947f1ff5bb23",
+  "position": {
+    "x": 20,
+    "y": 480,
+    "z": 4000,
+    "width": 400,
+    "height": 228,
+    "tabOrder": 4000
+  },
+  "visual": {
+    "visualType": "pivotTable",
+    "query": {
+      "queryState": {
+        "Rows": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Products"
+                    }
+                  },
+                  "Property": "abc"
+                }
+              },
+              "queryRef": "Products.abc",
+              "nativeQueryRef": "abc",
+              "displayName": "ABC"
+            }
+          ]
+        },
+        "Columns": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Products"
+                    }
+                  },
+                  "Property": "xyz"
+                }
+              },
+              "queryRef": "Products.xyz",
+              "nativeQueryRef": "xyz",
+              "displayName": "XYZ"
+            }
+          ]
+        },
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Recommended Stock (£k)"
+                }
+              },
+              "queryRef": "_Measures.Recommended Stock (£k)",
+              "nativeQueryRef": "Recommended Stock (£k)"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Recommended stock value per box (£)'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
